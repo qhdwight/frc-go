@@ -1,8 +1,9 @@
 package main
 
-// #cgo CFLAGS: -g -Wall -Iinclude
-// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpilibc -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa
+// #cgo CFLAGS: -g -Wall -Iinclude -I/Users/qhdwight/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0
+// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpilibc -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix
 // #include "hal/HAL.h"
+// #include "ctre/phoenix/motorcontrol/can/TalonSRX.h"
 import "C"
 import (
 	"fmt"

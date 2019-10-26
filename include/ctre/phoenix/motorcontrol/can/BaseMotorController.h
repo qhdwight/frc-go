@@ -378,6 +378,10 @@ struct BaseMotorControllerConfiguration : ctre::phoenix::CustomParamConfiguratio
      * Motion Magic acceleration in (raw sensor units per 100 ms) per second.
      */
 	int motionAcceleration; 
+	/**
+	 * Zero to use trapezoidal motion during motion magic.  [1,8] for S-Curve, higher value for greater smoothing.
+	 */
+	int motionCurveStrength;
     /**
      * Motion profile base trajectory period in milliseconds.
      * 
@@ -421,9 +425,9 @@ struct BaseMotorControllerConfiguration : ctre::phoenix::CustomParamConfiguratio
      * Desired window size for a tachometer sensor
      */
     int pulseWidthPeriod_FilterWindowSz;
-    /**
-     * Enable motion profile trajectory point interpolation (defaults to true).
-     */
+	/**
+	* Enable motion profile trajectory point interpolation (defaults to true).
+	*/
 	bool trajectoryInterpolationEnable;
 
     BaseMotorControllerConfiguration() :
@@ -445,6 +449,7 @@ struct BaseMotorControllerConfiguration : ctre::phoenix::CustomParamConfiguratio
         auxPIDPolarity(false), 
         motionCruiseVelocity(0),
         motionAcceleration(0),
+		motionCurveStrength(0),
         motionProfileTrajectoryPeriod(0),
         feedbackNotContinuous(false),
         remoteSensorClosedLoopDisableNeutralOnLOS(false),
@@ -496,8 +501,9 @@ struct BaseMotorControllerConfiguration : ctre::phoenix::CustomParamConfiguratio
         retstr += prependString + ".auxPIDPolarity = " + std::to_string(auxPIDPolarity) + ";\n"; 
         retstr += remoteFilter0.toString(prependString + ".remoteFilter0");
         retstr += remoteFilter1.toString(prependString + ".remoteFilter1");
-        retstr += prependString + ".motionCruiseVelocity = " + std::to_string(motionCruiseVelocity) + ";\n"; 
-        retstr += prependString + ".motionAcceleration = " + std::to_string(motionAcceleration) + ";\n"; 
+        retstr += prependString + ".motionCruiseVelocity = " + std::to_string(motionCruiseVelocity) + ";\n";
+		retstr += prependString + ".motionAcceleration = " + std::to_string(motionAcceleration) + ";\n";
+		retstr += prependString + ".motionCurveStrength = " + std::to_string(motionCurveStrength) + ";\n";
         retstr += prependString + ".motionProfileTrajectoryPeriod = " + std::to_string(motionProfileTrajectoryPeriod) + ";\n"; 
         retstr += prependString + ".feedbackNotContinuous = " + std::to_string(feedbackNotContinuous) + ";\n";
         retstr += prependString + ".remoteSensorClosedLoopDisableNeutralOnLOS = " + std::to_string(remoteSensorClosedLoopDisableNeutralOnLOS) + ";\n";
@@ -549,6 +555,7 @@ class BaseMotorControllerUtil : public ctre::phoenix::CustomParamConfigUtil {
         static bool AuxPIDPolarityDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.auxPIDPolarity == _default.auxPIDPolarity)) || !settings.enableOptimizations; }
         static bool MotionCruiseVelocityDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.motionCruiseVelocity == _default.motionCruiseVelocity)) || !settings.enableOptimizations; }
         static bool MotionAccelerationDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.motionAcceleration == _default.motionAcceleration)) || !settings.enableOptimizations; }
+		static bool MotionSCurveStrength(const BaseMotorControllerConfiguration & settings) { return (!(settings.motionCurveStrength == _default.motionCurveStrength)) || !settings.enableOptimizations; }		
         static bool MotionProfileTrajectoryPeriodDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.motionProfileTrajectoryPeriod == _default.motionProfileTrajectoryPeriod)) || !settings.enableOptimizations; }
         static bool FeedbackNotContinuousDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.feedbackNotContinuous == _default.feedbackNotContinuous)) || !settings.enableOptimizations; }
         static bool RemoteSensorClosedLoopDisableNeutralOnLOSDifferent (const BaseMotorControllerConfiguration & settings) { return (!(settings.remoteSensorClosedLoopDisableNeutralOnLOS == _default.remoteSensorClosedLoopDisableNeutralOnLOS)) || !settings.enableOptimizations; }
@@ -685,6 +692,7 @@ public:
 	 *
 	 * @param demand1 Supplemental value.  This will also be control mode specific for future features.
 	 */
+	[[deprecated("Use 4-paremeter Set() instead.")]]
 	virtual void Set(ControlMode mode, double demand0, double demand1);
 	/**
 	 * @param mode Sets the appropriate output on the talon, depending on the mode.
@@ -700,11 +708,14 @@ public:
 	 *
 	 * @param demand1Type The demand type for demand1.
 	 * Neutral: Ignore demand1 and apply no change to the demand0 output.
-	 * AuxPID: Use demand1 to set the target for the auxiliary PID 1.
+	 * AuxPID: Use demand1 to set the target for the auxiliary PID 1.  Auxiliary 
+	 *   PID is always executed as standard Position PID control.
 	 * ArbitraryFeedForward: Use demand1 as an arbitrary additive value to the
 	 *	 demand0 output.  In PercentOutput the demand0 output is the motor output,
 	 *   and in closed-loop modes the demand0 output is the output of PID0.
-	 * @param demand1 Supplmental output value.  Units match the set mode.
+	 * @param demand1 Supplmental output value.  
+	 * AuxPID: Target position in Sensor Units
+	 * ArbitraryFeedForward: Percent Output between -1.0 and 1.0
 	 *
 	 *
 	 *  Arcade Drive Example:
@@ -1690,6 +1701,20 @@ public:
 	 */
 	virtual ctre::phoenix::ErrorCode ConfigMotionAcceleration(int sensorUnitsPer100msPerSec,
 			int timeoutMs = 0);
+	/**
+	 * Sets the Motion Magic S Curve Strength. 
+	 * Call this before using Motion Magic.
+	 * Modifying this during a Motion Magic action should be avoided.
+	 *
+	 * @param curveStrength
+	 *            0 to use Trapezoidal Motion Profile. [1,8] for S-Curve (greater value yields greater smoothing).
+	 * @param timeoutMs
+	 *            Timeout value in ms. If nonzero, function will wait for config
+	 *            success and report an error if it times out. If zero, no
+	 *            blocking or checking is performed.
+	 * @return Error Code generated by function. 0 indicates no error.
+	 */
+	virtual ctre::phoenix::ErrorCode ConfigMotionSCurveStrength(int curveStrength, int timeoutMs = 0);
 	//------ Motion Profile Buffer ----------//
 	/**
 	 * Clear the buffered motion profile in both controller's RAM (bottom), and in the

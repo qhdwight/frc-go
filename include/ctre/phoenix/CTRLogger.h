@@ -19,7 +19,7 @@ public:
 	 * @param origin Origin string to send to DS/Log
 	 * @return OKAY error code.
 	 */
-	static ErrorCode Log(ErrorCode code, std::string origin);
+	static ErrorCode Log(ErrorCode code, const char * dev, const char * func);
 	/**
 	 * Open the logger
 	 * @param language the language you're using
