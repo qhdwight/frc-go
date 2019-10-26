@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"time"
 	"unsafe"
 )
 
@@ -29,8 +28,18 @@ const (
 	Test
 )
 
-func hasFlag(b byte, i byte) bool {
+const (
+	Period = 0.02
+)
+
+func hasFlag(b, i byte) bool {
 	return b & i != 0
+}
+
+func handleErrorStatus(status C.int32_t) {
+	if status != 0 {
+		panic(status)
+	}
 }
 
 func getHalStatusFlags() byte {
@@ -40,10 +49,17 @@ func getHalStatusFlags() byte {
 	return flags
 }
 
-func getJoystickAxes() {
+func getFPGATime() float64 {
+	status := C.int32_t(0)
+	time := float64(C.HAL_GetFPGATime(&status)) * 1e-6
+	handleErrorStatus(status)
+	return time
+}
+
+func getJoystickAxis(port, axis int) float64 {
 	var cAxes C.HAL_JoystickAxes
-	C.HAL_GetJoystickAxes(0, &cAxes)
-	fmt.Printf("%+v\n", cAxes)
+	C.HAL_GetJoystickAxes(C.int32_t(port), &cAxes)
+	return float64(cAxes.axes[axis])
 }
 
 func init() {
@@ -56,6 +72,14 @@ func main() {
 	}
 	fmt.Println("HAL Initialized")
 	C.HAL_ObserveUserProgramStarting()
+	status := C.int32_t(0)
+	notifier := C.HAL_InitializeNotifier(&status)
+	handleErrorStatus(status)
+
+	expirationTime := getFPGATime() + Period
+	C.HAL_UpdateNotifierAlarm(notifier, C.uint64_t(expirationTime * 1e6), &status)
+	handleErrorStatus(status)
+
 	lastMode := None
 	modeFunc := func(mode int, init, periodic func()) {
 		if lastMode != mode {
@@ -64,6 +88,14 @@ func main() {
 		periodic()
 	}
 	for {
+		currentTime := C.HAL_WaitForNotifierAlarm(notifier, &status)
+		if currentTime == 0 || status != 0 {
+			break
+		}
+		expirationTime += Period
+		C.HAL_UpdateNotifierAlarm(notifier, C.uint64_t(expirationTime * 1e6), &status)
+		handleErrorStatus(status)
+
 		flags := getHalStatusFlags()
 		isDisabled := !hasFlag(flags, FEnabled) || !hasFlag(flags, FDSAttached)
 		if isDisabled {
@@ -88,8 +120,9 @@ func main() {
 			})
 		}
 		robotPeriodic()
-		time.Sleep(500 * time.Millisecond)
 	}
+	C.HAL_StopNotifier(notifier, &status)
+	C.HAL_CleanNotifier(notifier, &status)
 }
 
 func disabledInit() {
@@ -101,7 +134,7 @@ func disabledPeriodic() {
 }
 
 func robotPeriodic() {
-	getJoystickAxes()
+
 }
 
 func testInit() {
@@ -125,7 +158,5 @@ func teleopInit() {
 }
 
 func teleopPeriodic() {
-	var cAxes C.HAL_JoystickAxes
-	C.HAL_GetJoystickAxes(0, &cAxes)
-	fmt.Printf("%+v\n", cAxes)
+
 }
