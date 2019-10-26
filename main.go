@@ -7,6 +7,8 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"time"
 	"unsafe"
 )
 
@@ -34,8 +36,18 @@ func hasFlag(b byte, i byte) bool {
 func getHalStatusFlags() byte {
 	var cControlWord C.HAL_ControlWord
 	C.HAL_GetControlWord(&cControlWord)
-	flags := C.GoBytes(unsafe.Pointer(&cControlWord), 4)[0]
+	flags := C.GoBytes(unsafe.Pointer(&cControlWord), C.sizeof_HAL_ControlWord)[0]
 	return flags
+}
+
+func getJoystickAxes() {
+	var cAxes C.HAL_JoystickAxes
+	C.HAL_GetJoystickAxes(0, &cAxes)
+	fmt.Printf("%+v\n", cAxes)
+}
+
+func init() {
+	runtime.LockOSThread()
 }
 
 func main() {
@@ -45,35 +57,38 @@ func main() {
 	fmt.Println("HAL Initialized")
 	C.HAL_ObserveUserProgramStarting()
 	lastMode := None
+	modeFunc := func(mode int, init, periodic func()) {
+		if lastMode != mode {
+			init()
+		}
+		periodic()
+	}
 	for {
 		flags := getHalStatusFlags()
 		isDisabled := !hasFlag(flags, FEnabled) || !hasFlag(flags, FDSAttached)
 		if isDisabled {
-			if lastMode != Disabled {
-				disabledInit()
-				lastMode = Disabled
-			}
-			disabledPeriodic()
-		} else if isAutonomous := hasFlag(flags, Autonomous); isAutonomous {
-			if lastMode != Autonomous {
-				autonomousInit()
-				lastMode = Autonomous
-			}
-			autonomousPeriodic()
-		} else if isOperatorControl := !hasFlag(flags, Autonomous) && !hasFlag(flags, Test); isOperatorControl {
-			if lastMode != Teleop {
-				teleopInit()
-				lastMode = Teleop
-			}
-			teleopPeriodic()
+			modeFunc(Disabled, disabledInit, func() {
+				C.HAL_ObserveUserProgramDisabled()
+				disabledPeriodic()
+			})
+		} else if isAutonomous := hasFlag(flags, FAutonomous); isAutonomous {
+			modeFunc(Autonomous, autonomousInit, func() {
+				C.HAL_ObserveUserProgramAutonomous()
+				autonomousPeriodic()
+			})
+		} else if isOperatorControl := !hasFlag(flags, FAutonomous) && !hasFlag(flags, FTest); isOperatorControl {
+			modeFunc(Teleop, teleopInit, func() {
+				C.HAL_ObserveUserProgramTeleop()
+				teleopPeriodic()
+			})
 		} else {
-			if lastMode != Test {
-				testInit()
-				lastMode = Test
-			}
-			testPeriodic()
+			modeFunc(Test, testInit, func() {
+				C.HAL_ObserveUserProgramTest()
+				testPeriodic()
+			})
 		}
-		periodic()
+		robotPeriodic()
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 
@@ -85,8 +100,8 @@ func disabledPeriodic() {
 
 }
 
-func periodic() {
-
+func robotPeriodic() {
+	getJoystickAxes()
 }
 
 func testInit() {
@@ -110,5 +125,7 @@ func teleopInit() {
 }
 
 func teleopPeriodic() {
-
+	var cAxes C.HAL_JoystickAxes
+	C.HAL_GetJoystickAxes(0, &cAxes)
+	fmt.Printf("%+v\n", cAxes)
 }

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d917e801-c6d7-4a42-9f98-6a7f6bcf2334" name="Default Changelist" comment="" />
+    <list default="true" id="d917e801-c6d7-4a42-9f98-6a7f6bcf2334" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,20 +55,42 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
-    <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+  <component name="RunManager" selected="Go Build.Run">
+    <configuration name="Build Rio" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
       <module name="go-frc" />
       <working_directory value="$PROJECT_DIR$" />
-      <go_parameters value="-v" />
+      <go_parameters value="-i" />
+      <useCustomBuildTags value="true" />
+      <envs>
+        <env name="GOARCH" value="arm" />
+        <env name="GOARM" value="7" />
+        <env name="GOOS" value="linux" />
+      </envs>
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <package value="go-frc" />
+      <directory value="$PROJECT_DIR$/" />
+      <option name="run" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="go-frc" />
+      <working_directory value="$PROJECT_DIR$" />
+      <go_parameters value="-i" />
+      <useCustomBuildTags value="true" />
       <kind value="PACKAGE" />
       <filePath value="$PROJECT_DIR$/main.go" />
       <package value="go-frc" />
       <directory value="$PROJECT_DIR$/" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Go Build.Run" />
+      <item itemvalue="Go Build.Build Rio" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Build.Run" />
+        <item itemvalue="Go Build.Build Rio" />
       </list>
     </recent_temporary>
   </component>
