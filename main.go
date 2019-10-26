@@ -1,7 +1,7 @@
 package main
 
 // #cgo CFLAGS: -g -Wall -Iinclude
-// #cgo LDFLAGS: -Llib/simulated -lwpiHal -lwpilibc -lwpiutil -lstdc++
+// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpilibc -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa
 // #include "hal/HAL.h"
 import "C"
 import (
