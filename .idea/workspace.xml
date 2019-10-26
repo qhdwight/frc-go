@@ -2,6 +2,38 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d917e801-c6d7-4a42-9f98-6a7f6bcf2334" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/include/ctre/Phoenix.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/CANBusAddressable.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/CANifier.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/CTRLogger.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/CustomParamConfiguration.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/HsvToRgb.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/LinearInterpolation.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/RCRadio3Ch.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/Stopwatch.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/Utilities.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motion/BufferedTrajectoryPointStream.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/DeviceCatalog.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/GroupMotorControllers.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/IFollower.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/IMotorController.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/IMotorControllerEnhanced.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/SensorCollection.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/can/BaseMotorController.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/can/TalonSRX.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/motorcontrol/can/VictorSPX.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/platform/PlatformSim.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/platform/can/PlatformCAN.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/sensors/PigeonIMU.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/signals/IInvertable.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/signals/IOutputSignal.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/signals/MovingAverage.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/tasking/ILoopable.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/tasking/IProcessable.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/tasking/Schedulers/ConcurrentScheduler.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/tasking/Schedulers/SequentialScheduler.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/include/ctre/phoenix/unmanaged/Unmanaged.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/athena/libCTRE_Phoenix.a" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
@@ -32,9 +64,13 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="go.import.settings.migrated" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/include" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/include" />
+      <recent name="$PROJECT_DIR$/lib/athena" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/lib/simulated" />
       <recent name="$PROJECT_DIR$/lib" />
@@ -76,7 +112,7 @@
     <configuration name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="go-frc" />
       <working_directory value="$PROJECT_DIR$" />
-      <go_parameters value="-i" />
+      <go_parameters value="-v" />
       <useCustomBuildTags value="true" />
       <kind value="PACKAGE" />
       <filePath value="$PROJECT_DIR$/main.go" />
