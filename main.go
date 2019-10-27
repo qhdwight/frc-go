@@ -1,9 +1,9 @@
 package main
 
-// #cgo CFLAGS: -g -Wall -Iinclude -I/Users/qhdwight/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0
-// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpilibc -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix
-// #include "hal/HAL.h"
-// #include "ctre/phoenix/motorcontrol/can/TalonSRX.h"
+// #cgo CFLAGS: -g -Wall -Iinclude -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
+// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix
+// #include "hal.h"
+// #include "pheonix.h"
 import "C"
 import (
 	"fmt"
@@ -127,7 +127,7 @@ func main() {
 }
 
 func disabledInit() {
-
+	C.TalonSRX(2)
 }
 
 func disabledPeriodic() {
@@ -151,7 +151,6 @@ func autonomousInit() {
 }
 
 func autonomousPeriodic() {
-
 }
 
 func teleopInit() {
@@ -159,5 +158,6 @@ func teleopInit() {
 }
 
 func teleopPeriodic() {
-
+	throttle := getJoystickAxis(0, 1)
+	_ = throttle
 }

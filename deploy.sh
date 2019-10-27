@@ -1,0 +1,1 @@
+scp build/Build_RoboRIO_linux admin@roborio-8-frc.local:/home/lvuser/frcUserProgram
