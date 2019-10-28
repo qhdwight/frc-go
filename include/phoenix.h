@@ -1,11 +1,7 @@
 typedef void CTalon;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+CTalon* CTRE_CreateTalon(int port);
 
-CTalon* CTRE_CreateTalon();
+void CTRE_Set(CTalon* talon, double output);
 
-#ifdef __cplusplus
-}
-#endif
+void CTRE_Follow(CTalon* slave, CTalon* master);

@@ -1,7 +1,8 @@
 package main
 
 // #cgo CFLAGS: -Iinclude -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
-// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix
+// #cgo CXXFLAGS: -Iinclude
+// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI
 // #include "hal.h"
 // #include "phoenix.h"
 import "C"
@@ -73,7 +74,7 @@ func main() {
 	}
 	fmt.Println("HAL Initialized")
 
-	C.CTRE_CreateTalon()
+	robotInit()
 
 	C.HAL_ObserveUserProgramStarting()
 	status := C.int32_t(0)
@@ -129,8 +130,13 @@ func main() {
 	C.HAL_CleanNotifier(notifier, &status)
 }
 
+func robotInit() {
+	talon := C.CTRE_CreateTalon(0)
+	_ = talon
+}
+
 func disabledInit() {
-	//C.CTRE_CreateTalon(2)
+
 }
 
 func disabledPeriodic() {
