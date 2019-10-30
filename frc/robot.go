@@ -1,14 +1,13 @@
 package frc
 
-// #cgo CFLAGS: -I${SRCDIR}/include -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
+// #cgo CFLAGS: -I${SRCDIR}/include -I/Users/quintin/.gradle/toolchains/frc/2019/roborio/arm-frc2019-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2019/roborio/arm-frc2019-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2019-linux-gnueabi
 // #cgo CXXFLAGS: -I${SRCDIR}/include
-// #cgo LDFLAGS: -L${SRCDIR}/lib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI -lSparkMaxDriver
+// #cgo LDFLAGS: -L${SRCDIR}/lib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa
 // #include "hal.h"
-// #include "rev.h"
-// #include "phoenix.h"
 import "C"
 import (
 	"fmt"
+	"go-frc/frc/phoenix"
 	"os"
 	"unsafe"
 )
@@ -35,7 +34,7 @@ const (
 )
 
 var (
-	right, left unsafe.Pointer
+	right, left *phoenix.Talon
 )
 
 func hasFlag(b, i byte) bool {
@@ -131,16 +130,12 @@ func Start() {
 }
 
 func robotInit() {
-	right = C.CTRE_CreateTalon(6)
-	rightSlaveOne := C.CTRE_CreateTalon(5)
-	rightSlaveTwo := C.CTRE_CreateTalon(4)
-	C.CTRE_Follow(right, rightSlaveOne)
-	C.CTRE_Follow(right, rightSlaveTwo)
-	left = C.CTRE_CreateTalon(1)
-	leftSlaveOne := C.CTRE_CreateTalon(2)
-	leftSlaveTwo := C.CTRE_CreateTalon(3)
-	C.CTRE_Follow(left, leftSlaveOne)
-	C.CTRE_Follow(left, leftSlaveTwo)
+	right = phoenix.NewTalon(6)
+	phoenix.NewSlaveTalon(5, right)
+	phoenix.NewSlaveTalon(4, right)
+	left = phoenix.NewTalon(1)
+	phoenix.NewSlaveTalon(2, left)
+	phoenix.NewSlaveTalon(3, left)
 }
 
 func disabledInit() {
@@ -176,6 +171,6 @@ func teleopInit() {
 
 func teleopPeriodic() {
 	throttle := getJoystickAxis(0, 1)
-	C.CTRE_Set(right, C.double(throttle))
-	C.CTRE_Set(left, C.double(throttle))
+	left.Set(throttle)
+	right.Set(throttle)
 }
