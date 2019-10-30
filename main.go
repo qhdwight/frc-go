@@ -1,10 +1,11 @@
 package main
 
 // #cgo CFLAGS: -Iinclude -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
-// #cgo CXXFLAGS: -Iinclude
-// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI
+// #cgo CXXFLAGS: -Iinclude -std=c++11
+// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI -lSparkMaxDriver
 // #include "hal.h"
 // #include "phoenix.h"
+// #include "rev.h"
 import "C"
 import (
 	"fmt"
@@ -132,7 +133,9 @@ func main() {
 
 func robotInit() {
 	talon := C.CTRE_CreateTalon(0)
+	spark := C.REV_CreateSpark(0)
 	_ = talon
+	_ = spark
 }
 
 func disabledInit() {
