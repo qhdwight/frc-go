@@ -1,8 +1,8 @@
-package main
+package frc
 
-// #cgo CFLAGS: -Iinclude -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
-// #cgo CXXFLAGS: -Iinclude
-// #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI -lSparkMaxDriver
+// #cgo CFLAGS: -I${SRCDIR}/include -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
+// #cgo CXXFLAGS: -I${SRCDIR}/include
+// #cgo LDFLAGS: -L${SRCDIR}/lib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI -lSparkMaxDriver
 // #include "hal.h"
 // #include "rev.h"
 // #include "phoenix.h"
@@ -10,7 +10,6 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"unsafe"
 )
 
@@ -69,11 +68,7 @@ func getJoystickAxis(port, axis int) float64 {
 	return float64(cAxes.axes[axis])
 }
 
-func init() {
-	runtime.LockOSThread()
-}
-
-func main() {
+func Start() {
 	if C.HAL_Initialize(500, 0) == 0 {
 		os.Exit(-1)
 	}
