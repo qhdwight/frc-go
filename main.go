@@ -1,11 +1,11 @@
 package main
 
 // #cgo CFLAGS: -Iinclude -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0 -I/Users/quintin/.gradle/toolchains/frc/2020/roborio/arm-frc2020-linux-gnueabi/usr/include/c++/7.3.0/arm-frc2020-linux-gnueabi
-// #cgo CXXFLAGS: -Iinclude -std=c++11
+// #cgo CXXFLAGS: -Iinclude
 // #cgo LDFLAGS: -Llib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -lCTRE_Phoenix -lCTRE_PhoenixCCI -lSparkMaxDriver
 // #include "hal.h"
-// #include "phoenix.h"
 // #include "rev.h"
+// #include "phoenix.h"
 import "C"
 import (
 	"fmt"
@@ -33,6 +33,10 @@ const (
 
 const (
 	Period = 0.02
+)
+
+var (
+	right, left unsafe.Pointer
 )
 
 func hasFlag(b, i byte) bool {
@@ -132,10 +136,16 @@ func main() {
 }
 
 func robotInit() {
-	talon := C.CTRE_CreateTalon(0)
-	spark := C.REV_CreateSpark(0)
-	_ = talon
-	_ = spark
+	right = C.CTRE_CreateTalon(6)
+	rightSlaveOne := C.CTRE_CreateTalon(5)
+	rightSlaveTwo := C.CTRE_CreateTalon(4)
+	C.CTRE_Follow(right, rightSlaveOne)
+	C.CTRE_Follow(right, rightSlaveTwo)
+	left = C.CTRE_CreateTalon(1)
+	leftSlaveOne := C.CTRE_CreateTalon(2)
+	leftSlaveTwo := C.CTRE_CreateTalon(3)
+	C.CTRE_Follow(left, leftSlaveOne)
+	C.CTRE_Follow(left, leftSlaveTwo)
 }
 
 func disabledInit() {
@@ -171,5 +181,6 @@ func teleopInit() {
 
 func teleopPeriodic() {
 	throttle := getJoystickAxis(0, 1)
-	_ = throttle
+	C.CTRE_Set(right, C.double(throttle))
+	C.CTRE_Set(left, C.double(throttle))
 }

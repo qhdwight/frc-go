@@ -18,7 +18,7 @@ extern "C" {
         TALON(talon)->Set(ctre::ControlMode::PercentOutput, output);
     }
 
-    void CTRE_Follow(CTalon* slave, CTalon* master) {
+    void CTRE_Follow(CTalon* master, CTalon* slave) {
         TALON(slave)->Follow(*(TALON(master)));
     }
 }
