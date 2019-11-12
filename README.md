@@ -2,15 +2,15 @@
 
 ## What?
 
-[Go](https://golang.org) is a compiled language made by some very smart people at Google which is an interesting combination of... C and Python? It has a garbage collector but also the ability to manage your own memory if you know what you are doing. It also has a very nice standard library useful for many modern programming tasks. Also has reflection and a nice emphasis on multi-threading.
+[Go](https://golang.org) is a compiled language made by some very smart people at Google which is an interesting combination of... C and Python? It has a garbage collector but also the ability to manage your own memory if you know what you are doing. The standard library is extensive and makes many modern programming tasks easy. In addition to his, it has reflection and a nice emphasis on multi-threading.
 
 ## Why?
 
-Go is fast and hits those sweet fifty updates per second. And also it has CGo, which allows it to link natively into C code making this all possible. I also just really like writing Go.
+Go is fast and hits those sweet fifty updates per second. It also has CGo, which allows it to link natively into C code making this all possible. Go is also just enjoyable to program in.
 
 ## Okay, how?
 
-I yoinked the built binaries for HAL etc. and use CGo to link them into Go. Go also has the ability to cross-compile for ARM processors, which is what the roboRIO is.
+I yoinked the built binaries for HAL etc. and use CGo to link them into Go. Go also has the ability to cross-compile for ARM processors, which is what the roboRIO has.
 
 ## Project Layout?
 
@@ -20,11 +20,11 @@ I yoinked the built binaries for HAL etc. and use CGo to link them into Go. Go a
 
 `**/include` Header files
 
-`**/lib` Libraries built for roborio
+`**/lib` Libraries built for roborRIO
 
-`frc/rev/` Support for the low-level Spark Max code (untested as of right now)
+`frc/rev/` Support for the low-level Spark MAX library (untested as of right now)
 
-`frc/phoenix` Support for the CTRE Talon
+`frc/phoenix` Support for the CTRE Talon SRX
 
 ## What is this not?
 
@@ -47,4 +47,8 @@ The following environment variables must be set:
 * `CC=<home>/.gradle/toolchains/frc/2019/roborio/bin/arm-frc2019-linux-gnueabi-gcc`
 * `CXX=<home>/.gradle/toolchains/frc/2019/roborio/bin/arm-frc2019-linux-gnueabi-g++`
 
-And then to build, `go build go-frc`. I use GoLand from JetBrains to set up these tasks so it is a lot easier.
+And then to build, `go build -o build/Build_RoboRIO_linux go-frc`. I use GoLand from JetBrains to set up these tasks so it is a lot easier.
+
+## How do I put this on my robot?
+
+You must copy the binary to `/home/lvuser/frcUserProgram` on the roboRIO somehow, since this is the executable that it wants to run. I recommend using `scp` to do so and then restarting code in the driver station. That is ugly though - you can experiment with the `deploy.sh` script as well. Run it via `./deploy.sh <team number>`. There is definitely a better way to do this so make an issue scolding me.
