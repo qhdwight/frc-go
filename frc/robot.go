@@ -29,7 +29,7 @@ const (
 )
 
 const (
-	Period = 0.02
+	Period = 0.02 // Seconds, should correspond to running the robot loop 50 times a second
 )
 
 var (
@@ -49,6 +49,9 @@ func handleErrorStatus(status C.int32_t) {
 func getHalStatusFlags() byte {
 	var cControlWord C.HAL_ControlWord
 	C.HAL_GetControlWord(&cControlWord)
+	// It is a bit field in C, which does not play nicely with CGo
+	// So we have to convert it to a raw byte array and read the first byte as the flags
+	// This does leave a little memory which is technically not part of the flags but we ignore it
 	flags := C.GoBytes(unsafe.Pointer(&cControlWord), C.sizeof_HAL_ControlWord)[0]
 	return flags
 }

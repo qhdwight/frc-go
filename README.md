@@ -16,9 +16,11 @@ I yoinked the built binaries for HAL etc. and use CGo to link them into Go. Go a
 
 `starter.go` Has the main function, starts the program
 
-`frc/include` Header file for the HAL
+`frc/robot.go` Contains the code for interacting with the driver station and running corresponding behavior. Right now, it is just set up with P-Drive for our 2017 team 8 robot "Vali" which had a 6 motor CIM drive-train using Talons.
 
-`frc/lib` Libraries for HAL
+`**/include` Header files
+
+`**/lib` Libraries built for roborio
 
 `frc/rev/` Support for the low-level Spark Max code (untested as of right now)
 
