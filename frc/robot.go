@@ -171,6 +171,7 @@ func teleopInit() {
 
 func teleopPeriodic() {
 	throttle := getJoystickAxis(0, 1)
-	left.Set(throttle)
-	right.Set(throttle)
+	turn := getJoystickAxis(0, 0)
+	left.Set(turn - throttle)
+	right.Set(turn + throttle)
 }
