@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/qhdwight/frc-go/workflows/Go/badge.svg)](https://github.com/qhdwight/frc-go/actions)
+
 # Golang for FRC Robotics
 
 ## What?
