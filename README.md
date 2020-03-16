@@ -42,7 +42,7 @@ Glad you asked about this nightmare. CGo does not play nice with C++, so you wil
 
 So there is a lot of setup that must happen since we are cross-compiling to ARM using the roboRIO athena toolchain.
 
-The toolchain can be insatlled in any C++ robot project with the `installRoboRioToolchain` task. It can also be downloaded from [here](https://github.com/wpilibsuite/toolchain-builder/releases), but you must update the `CC` and `CXX` environment variables set below so CGo knows to use them. Gradle is used just for convenience since most already have a C++ robot project.
+The toolchain can be installed in any C++ robot project with the `installRoboRioToolchain` task. It can also be downloaded from [here](https://github.com/wpilibsuite/toolchain-builder/releases), but you must update the `CC` and `CXX` environment variables set below so CGo knows to use them. Gradle is used just for convenience since most already have a C++ robot project.
 
 The following environment variables must be set:
 
