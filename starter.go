@@ -10,5 +10,5 @@ func init() {
 }
 
 func main() {
-	frc.Start()
+	frc.StartTimed(frc.Robot{})
 }
