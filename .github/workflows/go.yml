@@ -5,6 +5,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    container: wpilib/roborio-cross-ubuntu:2022-20.04
     steps:
 
     - name: Set up Go 1.17
@@ -23,10 +24,6 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
-        
-    - name: Download athena toolchain
-      run: |
-        curl -SL https://github.com/wpilibsuite/toolchain-builder/releases/download/v2019-3/FRC-2019-Linux-Toolchain-6.3.0.tar.gz | sh -c 'sudo mkdir -p /usr/local && cd /usr/local && sudo tar xzf - --strip-components=2'
 
     - name: Build
-      run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=/usr/local/bin/arm-frc2019-linux-gnueabi-gcc CXX=/usr/local/bin/arm-frc2019-linux-gnueabi-g++ go build -v go-frc
+      run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=/usr/local/bin/arm-frc2022-linux-gnueabi-gcc CXX=/usr/local/bin/arm-frc2022-linux-gnueabi-g++ go build -v go-frc
