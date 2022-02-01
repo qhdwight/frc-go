@@ -1,5 +1,5 @@
 name: Go
-on: [push]
+on: [ push ]
 jobs:
 
   build:
@@ -8,22 +8,22 @@ jobs:
     container: wpilib/roborio-cross-ubuntu:2022-20.04
     steps:
 
-    - name: Set up Go 1.17
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.17
-      id: go
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.17
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
 
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
+      - name: Get dependencies
+        run: |
+          go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
 
-    - name: Build
-      run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=/usr/local/bin/arm-frc2022-linux-gnueabi-gcc CXX=/usr/local/bin/arm-frc2022-linux-gnueabi-g++ go build -v go-frc
+      - name: Build
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=/usr/local/bin/arm-frc2022-linux-gnueabi-gcc CXX=/usr/local/bin/arm-frc2022-linux-gnueabi-g++ go build -v go-frc

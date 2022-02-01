@@ -8,7 +8,7 @@
 
 ## Why?
 
-Go is fast and hits those sweet fifty updates per second. It also has CGo, which allows it to link natively into C code making this all possible. The main reason why though is because I really enjoy writing Go - to be honest, you can hit fifty updates per second with any language if done properly.
+Go is fast and hits those sweet fifty updates per second. It also has CGo, which allows it to link natively into C code making this all possible. The main reason why though is because I really enjoy writing Go.
 
 ## Okay, how?
 
@@ -39,10 +39,13 @@ Glad you asked about this nightmare. CGo does not play nice with C++, so you wil
 ## How do I build it?
 
 [Install Go](https://golang.org/doc/install) and make sure that it is added to your PATH.
+The toolchain can be installed in any C++ robot project with the `installRoboRioToolchain` task.
 
-So there is a lot of setup that must happen since we are cross-compiling to ARM using the roboRIO athena toolchain.
+### Using the makefile (EASY)
 
-The toolchain can be installed in any C++ robot project with the `installRoboRioToolchain` task. It can also be downloaded from [here](https://github.com/wpilibsuite/toolchain-builder/releases), but you must update the `CC` and `CXX` environment variables set below so CGo knows to use them. Gradle is used just for convenience since most already have a C++ robot project.
+Install the toolchain and run `make` in the root directory
+
+### Manually (Windows)
 
 The following environment variables must be set:
 
@@ -50,11 +53,17 @@ The following environment variables must be set:
 * `GOARCH=arm`
 * `GOARM=7`
 * `CGO_ENABLED=1`
-* `CC=<home>/.gradle/toolchains/frc/2019/roborio/bin/arm-frc2019-linux-gnueabi-gcc`
-* `CXX=<home>/.gradle/toolchains/frc/2019/roborio/bin/arm-frc2019-linux-gnueabi-g++`
+* `CC=<home>/.gradle/toolchains/frc/2022/roborio/bin/arm-frc2022-linux-gnueabi-gcc`
+* `CXX=<home>/.gradle/toolchains/frc/2022/roborio/bin/arm-frc2022-linux-gnueabi-g++`
 
 And then to build, `go build -o build/Build_RoboRIO_linux go-frc`. I use GoLand from JetBrains to set up these tasks so it is a lot easier.
 
 ## How do I put this on my robot?
 
-You must copy the binary to `/home/lvuser/frcUserProgram` on the roboRIO somehow, since this is the executable that it wants to run. I recommend using `scp` to do so and then restarting code in the driver station. That is ugly though - you can experiment with the `deploy.sh` script as well. Run it via `./deploy.sh <team number>`. There is definitely a better way to do this so make an issue if you are knowledgeable abut this.
+### Using the makefile (EASY)
+
+`make deploy TEAM=<your team number>`
+
+### Manually (Windows)
+
+You must copy the binary to `/home/lvuser/frcUserProgram` on the roboRIO somehow, since this is the executable that it wants to run. I recommend using WinSCP/`scp`to do so and then restarting code in the driver station.
