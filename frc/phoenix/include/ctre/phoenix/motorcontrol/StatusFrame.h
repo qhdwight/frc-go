@@ -58,6 +58,11 @@ enum StatusFrameEnhanced {
 	/**
 	 * Firmware & API status information
 	 */
+	Status_15_FirmwareApiStatus = 0x1780,
+	/**
+	 * Firmware & API status information
+	 * [[deprecated("Use Status_15_FirmwareApiStatus instead.")]]
+	 */
 	Status_15_FirmareApiStatus = 0x1780,
 	/** 
 	 * MotionProfile Targets for Auxiliary PID1. 
@@ -76,6 +81,11 @@ enum StatusFrameEnhanced {
 	 * Gadgeteer status
 	 */
 	Status_11_UartGadgeteer = 0x1680,
+	/**
+	 * Brushless Current Status.
+	 * Includes Stator and Supply Current for Talon FX.
+	 */
+	Status_Brushless_Current = 0x1240,
 };
 
 /**

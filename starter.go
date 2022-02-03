@@ -2,6 +2,7 @@ package main
 
 import (
 	"go-frc/frc"
+	"go-frc/frc/wpi"
 	"runtime"
 )
 
@@ -10,5 +11,5 @@ func init() {
 }
 
 func main() {
-	frc.Start()
+	wpi.StartTimed(frc.Robot{})
 }
