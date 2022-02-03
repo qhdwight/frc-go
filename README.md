@@ -43,7 +43,7 @@ The toolchain can be installed in any C++ robot project with the `installRoboRio
 
 ### Using the makefile (EASY)
 
-Install the toolchain and run `make` in the root directory
+Install the toolchain, install deps with `make deps`, and run `make` in the root directory
 
 ### Manually (Windows)
 
