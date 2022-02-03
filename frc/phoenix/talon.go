@@ -2,7 +2,7 @@ package phoenix
 
 // #cgo CFLAGS: -I${SRCDIR}/include
 // #cgo CXXFLAGS: -I${SRCDIR}/include
-// #cgo LDFLAGS: -L${SRCDIR}/../lib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -Llib/athena -lCTRE_Phoenix -lCTRE_PhoenixCCI
+// #cgo LDFLAGS: -L${SRCDIR}/lib -lCTRE_Phoenix -lCTRE_PhoenixCCI -L${SRCDIR}/../../build -lwpiHal -lwpiutil -lstdc++ -ldl -lm -lFRC_NetworkCommunication -lembcanshim -lfpgalvshim -lRoboRIO_FRC_ChipObject -lvisa
 // #include "phoenix.h"
 import "C"
 import "unsafe"
@@ -25,4 +25,3 @@ func NewSlaveTalon(port int, talon *Talon) *Talon {
 func (talon *Talon) Set(output float64) {
 	C.CTRE_Set(talon.handle, C.double(output))
 }
-

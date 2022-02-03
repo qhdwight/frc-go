@@ -2,7 +2,7 @@ package rev
 
 // #cgo CFLAGS: -I${SRCDIR}/include
 // #cgo CXXFLAGS: -I${SRCDIR}/include
-// #cgo LDFLAGS: -L${SRCDIR}/../lib/athena -lwpiHal -lwpiutil -lstdc++ -lm -lFRC_NetworkCommunication -lNiFpga -lNiFpgaLv -lniriodevenum -lniriosession -lNiRioSrv -lRoboRIO_FRC_ChipObject -lvisa -Llib/athena -lSparkMaxDriver
+// #cgo LDFLAGS: -L${SRCDIR}/lib -lREVLib -lREVLibDriver -L${SRCDIR}/../../build -lwpiHal -lwpiutil -lstdc++ -ldl -lm -lFRC_NetworkCommunication -lembcanshim -lfpgalvshim -lRoboRIO_FRC_ChipObject -lvisa
 // #include "rev.h"
 import "C"
 import "unsafe"

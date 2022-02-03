@@ -4,640 +4,424 @@
 #pragma warning (disable : 4250)
 #endif
 
-#include "ctre/phoenix/motorcontrol/can/BaseMotorController.h"
+#include "ctre/phoenix/motorcontrol/can/BaseTalon.h"
 #include "ctre/phoenix/motorcontrol/IMotorControllerEnhanced.h"
 #include "ctre/phoenix/CustomParamConfiguration.h"
 
 /* forward proto's */
 namespace ctre {
-namespace phoenix {
-namespace motorcontrol {
-class SensorCollection;
-}
-}
+	namespace phoenix {
+		namespace motorcontrol {
+			class SensorCollection;
+			class TalonSRXSimCollection;
+		}
+	}
 }
 
 namespace ctre {
-namespace phoenix {
-namespace motorcontrol {
-namespace can {
+	namespace phoenix {
+		namespace motorcontrol {
+			namespace can {
 
-/**
- * Configurables available to TalonSRX's PID
- */
-struct TalonSRXPIDSetConfiguration : BasePIDSetConfiguration {
-    /**
-     * Feedback device for a particular PID loop.
-     */
-    FeedbackDevice selectedFeedbackSensor;
+				/**
+				 * Configurables available to TalonSRX's PID
+				 */
+				struct TalonSRXPIDSetConfiguration : BaseTalonPIDSetConfiguration { };
+				/**
+				 * Configurables available to TalonSRX
+				 */
+				struct TalonSRXConfiguration : BaseTalonConfiguration {
 
-    TalonSRXPIDSetConfiguration() :
-        selectedFeedbackSensor(QuadEncoder)
-    {
-    }
+					/**
+					 * Peak current in amps
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 */
+					int peakCurrentLimit;
+					/**
+					 * Peak Current duration in milliseconds
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 */
+					int peakCurrentDuration;
+					/**
+					 * Continuous current in amps
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 */
+					int continuousCurrentLimit;
+					TalonSRXConfiguration() :
+						BaseTalonConfiguration(FeedbackDevice::QuadEncoder),
+						peakCurrentLimit(1),
+						peakCurrentDuration(1),
+						continuousCurrentLimit(1)
+					{
+					}
 
-    /**
-     * @return string representation of configs
-     */
-	std::string toString() {
-		return toString("");
-	}
+					/**
+					 * @return String representation of all the configs
+					 */
+					std::string toString() {
+						return toString("");
+					}
 
-    /**
-     * @param prependString
-     *              String to prepend to configs
-     * @return String representation of configs
-     */
-    std::string toString(std::string prependString) {
+					/**
+					 * @param prependString
+					 *              String to prepend to all the configs
+					 * @return String representation of all the configs
+					 */
+					std::string toString(std::string prependString) {
 
-        std::string retstr = prependString + ".selectedFeedbackSensor = " + FeedbackDeviceRoutines::toString(selectedFeedbackSensor) + ";\n";
-        retstr += BasePIDSetConfiguration::toString(prependString);
-        return retstr;
-    }
-};
+						std::string retstr;
+						retstr += prependString + ".peakCurrentLimit = " + std::to_string(peakCurrentLimit) + ";\n";
+						retstr += prependString + ".peakCurrentDuration = " + std::to_string(peakCurrentDuration) + ";\n";
+						retstr += prependString + ".continuousCurrentLimit = " + std::to_string(continuousCurrentLimit) + ";\n";
+						retstr += BaseTalonConfiguration::toString(prependString);
 
-/**
- * Util class to help with TalonSRX's PID configs
- */
-struct TalonSRXPIDSetConfigUtil {
-	private:
-		static TalonSRXPIDSetConfiguration _default;
-	public:
-		/**
-		 * Determine if specified value is different from default
-		 * @param settings settings to compare against
-		 * @return if specified value is different from default
-		 * @{
-		 */
-		static bool SelectedFeedbackSensorDifferent (const TalonSRXPIDSetConfiguration & settings) { return (!(settings.selectedFeedbackSensor == _default.selectedFeedbackSensor)); }
-		static bool SelectedFeedbackCoefficientDifferent (const TalonSRXPIDSetConfiguration & settings) { return (!(settings.selectedFeedbackCoefficient == _default.selectedFeedbackCoefficient)); }
-		/** @} */
-};
+						return retstr;
+					}
+				 };// struct TalonSRXConfiguration
 
+				/**
+				 * Util class to help with talon configs
+				 */
+				class TalonSRXConfigUtil : BaseTalonConfigUtil { 
+				private:
+					static struct TalonSRXConfiguration _default;
+				public:
+					/**
+					 * Determine if specified value is different from default
+					 * @param settings settings to compare against
+					 * @return if specified value is different from default
+					 * @{
+					 */
+					static bool PeakCurrentLimitDifferent(const TalonSRXConfiguration& settings) { return (!(settings.peakCurrentLimit == _default.peakCurrentLimit)) || !settings.enableOptimizations; }
+					static bool PeakCurrentDurationDifferent(const TalonSRXConfiguration& settings) { return (!(settings.peakCurrentDuration == _default.peakCurrentDuration)) || !settings.enableOptimizations; }
+					static bool ContinuousCurrentLimitDifferent(const TalonSRXConfiguration& settings) { return (!(settings.continuousCurrentLimit == _default.continuousCurrentLimit)) || !settings.enableOptimizations; }
 
-/**
- * Configurables available to TalonSRX
- */
-struct TalonSRXConfiguration : BaseMotorControllerConfiguration{
-    /**
-     * Primary PID configuration
-     */
-	TalonSRXPIDSetConfiguration primaryPID;
-    /**
-     * Auxiliary PID configuration
-     */
-	TalonSRXPIDSetConfiguration auxiliaryPID;
-    /**
-     * Forward Limit Switch Source
-     * 
-     * User can choose between the feedback connector, remote Talon SRX, CANifier, or deactivate the feature
-     */
-	LimitSwitchSource forwardLimitSwitchSource;
-    /**
-     * Reverse Limit Switch Source
-     * 
-     * User can choose between the feedback connector, remote Talon SRX, CANifier, or deactivate the feature
-     */
-	LimitSwitchSource reverseLimitSwitchSource;
-    /**
-     * Forward limit switch device ID
-     * 
-     * Limit Switch device id isn't used unless device is a remote
-     */
-	int forwardLimitSwitchDeviceID;
-    /**
-     * Reverse limit switch device ID
-     * 
-     * Limit Switch device id isn't used unless device is a remote
-     */
-	int reverseLimitSwitchDeviceID;
-    /**
-     * Forward limit switch normally open/closed
-     */
-	LimitSwitchNormal forwardLimitSwitchNormal;
-    /**
-     * Reverse limit switch normally open/closed
-     */
-	LimitSwitchNormal reverseLimitSwitchNormal;
-    /**
-     * Feedback Device for Sum 0 Term
-     */
-    FeedbackDevice sum0Term;
-    /**
-     * Feedback Device for Sum 1 Term
-     */
-	FeedbackDevice sum1Term;
-    /**
-     * Feedback Device for Diff 0 Term
-     */
-	FeedbackDevice diff0Term;
-    /**
-     * Feedback Device for Diff 1 Term
-     */
-	FeedbackDevice diff1Term;
-    /**
-     * Peak current in amps
-     * 
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-     */
-	int peakCurrentLimit; 
-    /**
-     * Peak Current duration in milliseconds
-     * 
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-     */
-    int peakCurrentDuration;
-    /**
-     * Continuous current in amps
-     * 
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-     */
-    int continuousCurrentLimit; 
-    TalonSRXConfiguration() :
-		forwardLimitSwitchSource(LimitSwitchSource_FeedbackConnector),
-		reverseLimitSwitchSource(LimitSwitchSource_FeedbackConnector),
-        forwardLimitSwitchDeviceID(0),
-        reverseLimitSwitchDeviceID(0),
-        forwardLimitSwitchNormal(LimitSwitchNormal_NormallyOpen), 
-        reverseLimitSwitchNormal(LimitSwitchNormal_NormallyOpen), 
-		sum0Term (QuadEncoder),
-		sum1Term (QuadEncoder),
-		diff0Term(QuadEncoder),
-		diff1Term(QuadEncoder),
-        peakCurrentLimit(1),
-		peakCurrentDuration(1), 
-		continuousCurrentLimit(1)
-	{
-	}
+					/** @} */
+				};
 
-    /**
-     * @return String representation of all the configs
-     */
-	std::string toString() {
-		return toString("");
-	}
+				/**
+				 * CTRE Talon SRX Motor Controller when used on CAN Bus.
+				 *
+				 * <pre>
+				 * {@code
+				 * // Example usage of a TalonSRX motor controller
+				 * TalonSRX motor{0}; // creates a new TalonSRX with ID 0
+				 *
+				 * TalonSRXConfiguration config;
+				 * config.peakCurrentLimit = 40; // the peak current, in amps
+				 * config.peakCurrentDuration = 1500; // the time at the peak current before the limit triggers, in ms
+				 * config.continuousCurrentLimit = 30; // the current to maintain if the peak limit is triggered
+				 * motor.ConfigAllSettings(config); // apply the config settings; this selects the quadrature encoder
+				 *
+				 * motor.Set(TalonSRXControlMode::PercentOutput, 0.5); // runs the motor at 50% power
+				 *
+				 * std::cout << motor.GetSelectedSensorPosition() << std::endl; // prints the position of the selected sensor
+				 * std::cout << motor.GetSelectedSensorVelocity() << std::endl; // prints the velocity recorded by the selected sensor
+				 * std::cout << motor.GetMotorOutputPercent() << std::endl; // prints the percent output of the motor (0.5)
+				 * std::cout << motor.GetStatorCurrent() << std::endl; // prints the output current of the motor
+				 *
+				 * ErrorCode error = motor.GetLastError(); // gets the last error generated by the motor controller
+				 * Faults faults;
+				 * ErrorCode faultsError = motor.GetFaults(faults); // fills faults with the current motor controller faults; returns the last error generated
+				 *
+				 * motor.SetStatusFramePeriod(StatusFrameEnhanced::Status_2_Feedback0, 10); // changes the period of the Status 2 frame (GetSelectedSensor*()) to 10ms
+				 * }
+				 * </pre>
+				 */
+				class TalonSRX : public virtual BaseTalon
+				{
+				private:
 
-    /**
-     * @param prependString
-     *              String to prepend to all the configs
-     * @return String representation of all the configs
-     */
-    std::string toString(std::string prependString) {
+				public:
+					/**
+					 * Constructor for a Talon
+					 * @param deviceNumber CAN Device ID of TalonSRX
+					 */
+					TalonSRX(int deviceNumber);
+					~TalonSRX();
+					TalonSRX() = delete;
+					TalonSRX(TalonSRX const&) = delete;
+					TalonSRX& operator=(TalonSRX const&) = delete;
+					// ------ Set output routines. ----------//
+					/**
+					 * Sets the appropriate output on the talon, depending on the mode.
+					 * @param mode The output mode to apply.
+					 * In PercentOutput, the output is between -1.0 and 1.0, with 0.0 as stopped.
+					 * In Current mode, output value is in amperes.
+					 * In Velocity mode, output value is in position change / 100ms.
+					 * In Position mode, output value is in encoder ticks or an analog value,
+					 *   depending on the sensor.
+					 * In Follower mode, the output value is the integer device ID of the talon to
+					 * duplicate.
+					 *
+					 * @param value The setpoint value, as described above.
+					 *
+					 *
+					 *	Standard Driving Example:
+					 *	_talonLeft.set(ControlMode.PercentOutput, leftJoy);
+					 *	_talonRght.set(ControlMode.PercentOutput, rghtJoy);
+					 */
+					void Set(TalonSRXControlMode mode, double value);
+					/**
+					 * @param mode Sets the appropriate output on the talon, depending on the mode.
+					 * @param demand0 The output value to apply.
+					 * 	such as advanced feed forward and/or auxiliary close-looping in firmware.
+					 * In PercentOutput, the output is between -1.0 and 1.0, with 0.0 as stopped.
+					 * In Current mode, output value is in amperes.
+					 * In Velocity mode, output value is in position change / 100ms.
+					 * In Position mode, output value is in encoder ticks or an analog value,
+					 *   depending on the sensor. See
+					 * In Follower mode, the output value is the integer device ID of the talon to
+					 * duplicate.
+					 *
+					 * @param demand1Type The demand type for demand1.
+					 * Neutral: Ignore demand1 and apply no change to the demand0 output.
+					 * AuxPID: Use demand1 to set the target for the auxiliary PID 1.  Auxiliary
+					 *   PID is always executed as standard Position PID control.
+					 * ArbitraryFeedForward: Use demand1 as an arbitrary additive value to the
+					 *	 demand0 output.  In PercentOutput the demand0 output is the motor output,
+					 *   and in closed-loop modes the demand0 output is the output of PID0.
+					 * @param demand1 Supplmental output value.
+					 * AuxPID: Target position in Sensor Units
+					 * ArbitraryFeedForward: Percent Output between -1.0 and 1.0
+					 *
+					 *
+					 *  Arcade Drive Example:
+					 *		_talonLeft.set(ControlMode.PercentOutput, joyForward, DemandType.ArbitraryFeedForward, +joyTurn);
+					 *		_talonRght.set(ControlMode.PercentOutput, joyForward, DemandType.ArbitraryFeedForward, -joyTurn);
+					 *
+					 *	Drive Straight Example:
+					 *	Note: Selected Sensor Configuration is necessary for both PID0 and PID1.
+					 *		_talonLeft.follow(_talonRght, FollwerType.AuxOutput1);
+					 *		_talonRght.set(ControlMode.PercentOutput, joyForward, DemandType.AuxPID, desiredRobotHeading);
+					 *
+					 *	Drive Straight to a Distance Example:
+					 *	Note: Other configurations (sensor selection, PID gains, etc.) need to be set.
+					 *		_talonLeft.follow(_talonRght, FollwerType.AuxOutput1);
+					 *		_talonRght.set(ControlMode.MotionMagic, targetDistance, DemandType.AuxPID, desiredRobotHeading);
+					 */
+					void Set(TalonSRXControlMode mode, double demand0, DemandType demand1Type, double demand1);
+					//------ sensor selection ----------//
+					/**
+					 * Select the feedback device for the motor controller.
+					 *
+					 * @param feedbackDevice
+					 *            Talon SRX Feedback Device to select.
+					 * @param pidIdx
+					 *            0 for Primary closed-loop. 1 for auxiliary closed-loop.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for
+					 *            config success and report an error if it times out.
+					 *            If zero, no blocking or checking is performed.
+					 * @return Error Code generated by function. 0 indicates no error.
+					 */
+					ctre::phoenix::ErrorCode ConfigSelectedFeedbackSensor(TalonSRXFeedbackDevice feedbackDevice, int pidIdx = 0, int timeoutMs = 0);
+					/**
+					 * Select the feedback device for the motor controller.
+					 *
+					 * @param feedbackDevice
+					 *            Feedback Device to select.
+					 * @param pidIdx
+					 *            0 for Primary closed-loop. 1 for auxiliary closed-loop.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for
+					 *            config success and report an error if it times out.
+					 *            If zero, no blocking or checking is performed.
+					 * @return Error Code generated by function. 0 indicates no error.
+					 */
+					ctre::phoenix::ErrorCode ConfigSelectedFeedbackSensor(FeedbackDevice feedbackDevice, int pidIdx, int timeoutMs = 0);
 
+					/**
+					 * Select the remote feedback device for the motor controller.
+					 * Most CTRE CAN motor controllers will support remote sensors over CAN.
+					 *
+					 * @param feedbackDevice
+					 *            Remote Feedback Device to select.
+					 * @param pidIdx
+					 *            0 for Primary closed-loop. 1 for auxiliary closed-loop.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for
+					 *            config success and report an error if it times out.
+					 *            If zero, no blocking or checking is performed.
+					 * @return Error Code generated by function. 0 indicates no error.
+					 */
+					ctre::phoenix::ErrorCode ConfigSelectedFeedbackSensor(RemoteFeedbackDevice feedbackDevice, int pidIdx, int timeoutMs);
 
-        std::string retstr = primaryPID.toString(prependString + ".primaryPID");
-	    retstr += auxiliaryPID.toString(prependString + ".auxiliaryPID");
-	    retstr += prependString + ".forwardLimitSwitchSource = " + LimitSwitchRoutines::toString(forwardLimitSwitchSource) + ";\n";
-	    retstr += prependString + ".reverseLimitSwitchSource = " + LimitSwitchRoutines::toString(reverseLimitSwitchSource) + ";\n";
-        retstr += prependString + ".forwardLimitSwitchDeviceID = " + std::to_string(forwardLimitSwitchDeviceID) + ";\n";
-        retstr += prependString + ".reverseLimitSwitchDeviceID = " + std::to_string(reverseLimitSwitchDeviceID) + ";\n";
-        retstr += prependString + ".forwardLimitSwitchNormal = " + LimitSwitchRoutines::toString(forwardLimitSwitchNormal) + ";\n";
-        retstr += prependString + ".reverseLimitSwitchNormal = " + LimitSwitchRoutines::toString(reverseLimitSwitchNormal) + ";\n";
-	    retstr += prependString + ".sum0Term = " + FeedbackDeviceRoutines::toString(sum0Term) + ";\n";
-	    retstr += prependString + ".sum1Term = " + FeedbackDeviceRoutines::toString(sum1Term) + ";\n";
-	    retstr += prependString + ".diff0Term = " + FeedbackDeviceRoutines::toString(diff0Term) + ";\n";
-	    retstr += prependString + ".diff1Term = " + FeedbackDeviceRoutines::toString(diff1Term) + ";\n";
-	    retstr += prependString + ".peakCurrentLimit = " + std::to_string(peakCurrentLimit) + ";\n"; 
-        retstr += prependString + ".peakCurrentDuration = " + std::to_string(peakCurrentDuration) + ";\n";
-        retstr += prependString + ".continuousCurrentLimit = " + std::to_string(continuousCurrentLimit) + ";\n"; 
-         retstr += BaseMotorControllerConfiguration::toString(prependString);
+					//------ Current Limit ----------//
+					/**
+					 * Configures the supply (input) current limit.
+					 * @param currLimitConfigs  Current limit configuration
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for
+					 *            config success and report an error if it times out.
+					 *            If zero, no blocking or checking is performed.
+					 * @return Error Code generated by function. 0 indicates no error.
+					 */
+					virtual ctre::phoenix::ErrorCode ConfigSupplyCurrentLimit(const SupplyCurrentLimitConfiguration& currLimitConfigs, int timeoutMs = 50);
+					/**
+					 * Configure the peak allowable current (when current limit is enabled).
+ 					 *
+ 					 * Supply current limiting is also available via ConfigSupplyCurrentLimit(),
+ 					 * which is a common routine with Talon FX.
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 *
+					 * For simpler current-limiting (single threshold) use
+					 * ConfigContinuousCurrentLimit() and set the peak to zero:
+					 * ConfigPeakCurrentLimit(0).
+					 *
+					 * @param amps
+					 *            Amperes to limit.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for config
+					 *            success and report an error if it times out. If zero, no
+					 *            blocking or checking is performed.
+					 */
+					ctre::phoenix::ErrorCode ConfigPeakCurrentLimit(int amps, int timeoutMs = 0);
+					/**
+					 * Configure the peak allowable duration (when current limit is enabled).
+ 					 *
+ 					 * Supply current limiting is also available via ConfigSupplyCurrentLimit(),
+ 					 * which is a common routine with Talon FX.
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 *
+					 * For simpler current-limiting (single threshold) use
+					 * ConfigContinuousCurrentLimit() and set the peak to zero:
+					 * ConfigPeakCurrentLimit(0).
+					 *
+					 * @param milliseconds
+					 *            How long to allow current-draw past peak limit.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for config
+					 *            success and report an error if it times out. If zero, no
+					 *            blocking or checking is performed.
+					 */
+					ctre::phoenix::ErrorCode ConfigPeakCurrentDuration(int milliseconds,
+						int timeoutMs = 0);
+					/**
+					 * Configure the continuous allowable current-draw (when current limit is
+					 * enabled).
+ 					 *
+ 					 * Supply current limiting is also available via ConfigSupplyCurrentLimit(),
+ 					 * which is a common routine with Talon FX.
+					 *
+					 * Current limit is activated when current exceeds the peak limit for longer
+					 * than the peak duration. Then software will limit to the continuous limit.
+					 * This ensures current limiting while allowing for momentary excess current
+					 * events.
+					 *
+					 * For simpler current-limiting (single threshold) use
+					 * ConfigContinuousCurrentLimit() and set the peak to zero:
+					 * ConfigPeakCurrentLimit(0).
+					 *
+					 * @param amps
+					 *            Amperes to limit.
+					 * @param timeoutMs
+					 *            Timeout value in ms. If nonzero, function will wait for config
+					 *            success and report an error if it times out. If zero, no
+					 *            blocking or checking is performed.
+					 */
+					ctre::phoenix::ErrorCode ConfigContinuousCurrentLimit(int amps, int timeoutMs = 0);
 
-       return retstr; 
-    }
-};// struct TalonSRXConfiguration
+					/**
+					 * Enable or disable Current Limit.
+ 					 *
+ 					 * Supply current limiting is also available via ConfigSupplyCurrentLimit(),
+ 					 * which is a common routine with Talon FX.
+					 *
+					 * @param enable
+					 *            Enable state of current limit.
+					 * @see configPeakCurrentLimit()
+					 * @see configPeakCurrentDuration()
+					 * @see configContinuousCurrentLimit()
+					 */
+					void EnableCurrentLimit(bool enable);
+					//------ RAW Sensor API ----------//
+					/**
+					 * @return object that can get/set individual RAW sensor values.
+					 */
+					ctre::phoenix::motorcontrol::SensorCollection& GetSensorCollection();
 
-/**
- * Util class to help with talon configs
- */
-class TalonConfigUtil {
-	private:
-		static struct TalonSRXConfiguration _default;
-	public:
-		/**
-		 * Determine if specified value is different from default
-		 * @param settings settings to compare against
-		 * @return if specified value is different from default
-		 * @{
-		 */
-		static bool ForwardLimitSwitchSourceDifferent (const TalonSRXConfiguration & settings) { return (!(settings.forwardLimitSwitchSource == _default.forwardLimitSwitchSource)) || !settings.enableOptimizations; }
-		static bool ReverseLimitSwitchSourceDifferent (const TalonSRXConfiguration & settings) { return (!(settings.reverseLimitSwitchSource == _default.reverseLimitSwitchSource)) || !settings.enableOptimizations; }
-		static bool ForwardLimitSwitchDeviceIDDifferent (const TalonSRXConfiguration & settings) { return (!(settings.forwardLimitSwitchDeviceID == _default.forwardLimitSwitchDeviceID)) || !settings.enableOptimizations; }
-		static bool ReverseLimitSwitchDeviceIDDifferent (const TalonSRXConfiguration & settings) { return (!(settings.reverseLimitSwitchDeviceID == _default.reverseLimitSwitchDeviceID)) || !settings.enableOptimizations; }
-		static bool ForwardLimitSwitchNormalDifferent (const TalonSRXConfiguration & settings) { return (!(settings.forwardLimitSwitchNormal == _default.forwardLimitSwitchNormal)) || !settings.enableOptimizations; }
-		static bool ReverseLimitSwitchNormalDifferent (const TalonSRXConfiguration & settings) { return (!(settings.reverseLimitSwitchNormal == _default.reverseLimitSwitchNormal)) || !settings.enableOptimizations; }
-		static bool Sum0TermDifferent (const TalonSRXConfiguration & settings) { return (!(settings.sum0Term == _default.sum0Term)) || !settings.enableOptimizations; }
-		static bool Sum1TermDifferent (const TalonSRXConfiguration & settings) { return (!(settings.sum1Term == _default.sum1Term)) || !settings.enableOptimizations; }
-		static bool Diff0TermDifferent (const TalonSRXConfiguration & settings) { return (!(settings.diff0Term == _default.diff0Term)) || !settings.enableOptimizations; }
-		static bool Diff1TermDifferent (const TalonSRXConfiguration & settings) { return (!(settings.diff1Term == _default.diff1Term)) || !settings.enableOptimizations; }
-		static bool PeakCurrentLimitDifferent (const TalonSRXConfiguration & settings) { return (!(settings.peakCurrentLimit == _default.peakCurrentLimit)) || !settings.enableOptimizations; }
-		static bool PeakCurrentDurationDifferent (const TalonSRXConfiguration & settings) { return (!(settings.peakCurrentDuration == _default.peakCurrentDuration)) || !settings.enableOptimizations; }
-		static bool ContinuousCurrentLimitDifferent (const TalonSRXConfiguration & settings) { return (!(settings.continuousCurrentLimit == _default.continuousCurrentLimit)) || !settings.enableOptimizations; }
+					//------ Simulation API ----------//
+					/**
+					 * @return object that can set simulation inputs.
+					 */
+					ctre::phoenix::motorcontrol::TalonSRXSimCollection& GetSimCollection();
 
-		static bool ForwardLimitSwitchDifferent (const TalonSRXConfiguration & settings) {
-			return ForwardLimitSwitchDeviceIDDifferent(settings) || ForwardLimitSwitchNormalDifferent(settings) || ForwardLimitSwitchSourceDifferent(settings);
-		}
-		static bool ReverseLimitSwitchDifferent (const TalonSRXConfiguration & settings) {
-			return ReverseLimitSwitchDeviceIDDifferent(settings) || ReverseLimitSwitchNormalDifferent(settings) || ReverseLimitSwitchSourceDifferent(settings);
-		}
-		/** @} */
-};
+					//------ All Configs ----------//
 
-/**
- * CTRE Talon SRX Motor Controller when used on CAN Bus.
- */
+					/**
+					 * Sets all PID persistant settings.
+					 *
+					 * @param pid               Object with all of the PID set persistant settings
+					 * @param pidIdx            0 for Primary closed-loop. 1 for auxiliary closed-loop.
+					 * @param timeoutMs
+					 *              Timeout value in ms. If nonzero, function will wait for
+					 *              config success and report an error if it times out.
+					 *              If zero, no blocking or checking is performed.
+					 */
+					ctre::phoenix::ErrorCode ConfigurePID(const TalonSRXPIDSetConfiguration& pid, int pidIdx = 0, int timeoutMs = 50);
+					/**
+					* Gets all PID set persistant settings.
+					*
+					* @param pid               Object with all of the PID set persistant settings
+					* @param pidIdx            0 for Primary closed-loop. 1 for auxiliary closed-loop.
+					* @param timeoutMs
+					*              Timeout value in ms. If nonzero, function will wait for
+					*              config success and report an error if it times out.
+					*              If zero, no blocking or checking is performed.
+					*/
+					void GetPIDConfigs(TalonSRXPIDSetConfiguration& pid, int pidIdx = 0, int timeoutMs = 50);
+					/**
+					 * Configures all persistent settings.
+					 *
+					 * @param allConfigs        Object with all of the persistant settings
+					 * @param timeoutMs
+					 *              Timeout value in ms. If nonzero, function will wait for
+					 *              config success and report an error if it times out.
+					 *              If zero, no blocking or checking is performed.
+					 *
+					 * @return Error Code generated by function. 0 indicates no error.
+					 */
+					ctre::phoenix::ErrorCode ConfigAllSettings(const TalonSRXConfiguration& allConfigs, int timeoutMs = 50);
+					/**
+					 * Gets all persistant settings.
+					 *
+					 * @param allConfigs        Object with all of the persistant settings
+					 * @param timeoutMs
+					 *              Timeout value in ms. If nonzero, function will wait for
+					 *              config success and report an error if it times out.
+					 *              If zero, no blocking or checking is performed.
+					 */
+					void GetAllConfigs(TalonSRXConfiguration& allConfigs, int timeoutMs = 50);
 
-class TalonSRX: public virtual BaseMotorController,
-		public virtual IMotorControllerEnhanced {
-private:
-	ctre::phoenix::motorcontrol::SensorCollection * _sensorColl;
+					/* ----- virtual re-directs ------- */
+					virtual void Set(ControlMode mode, double value);
+					virtual void Set(ControlMode mode, double demand0, DemandType demand1Type, double demand1);
+				};// class TalonSRX
 
-	ctre::phoenix::ErrorCode ConfigurePID(const TalonSRXPIDSetConfiguration &pid, int pidIdx, int timeoutMs, bool enableOptimizations);
-public:
-	/**
-	 * Constructor for a Talon
-	 * @param deviceNumber CAN Device ID of TalonSRX
-	 */
-	TalonSRX(int deviceNumber);
-	~TalonSRX();
-	TalonSRX() = delete;
-	TalonSRX(TalonSRX const&) = delete;
-	TalonSRX& operator=(TalonSRX const&) = delete;
-
-	/**
-	 * Select the remote feedback device for the motor controller.
-	 * Most CTRE CAN motor controllers will support remote sensors over CAN.
-	 *
-	 * @param feedbackDevice
-	 *            Remote Feedback Device to select.
-	 * @param pidIdx
-	 *            0 for Primary closed-loop. 1 for auxiliary closed-loop.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigSelectedFeedbackSensor(FeedbackDevice feedbackDevice, int pidIdx = 0, int timeoutMs = 0);
-	/**
-	 * Select the remote feedback device for the motor controller.
-	 * Most CTRE CAN motor controllers will support remote sensors over CAN.
-	 *
-	 * @param feedbackDevice
-	 *            Remote Feedback Device to select.
-	 * @param pidIdx
-	 *            0 for Primary closed-loop. 1 for auxiliary closed-loop.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigSelectedFeedbackSensor(RemoteFeedbackDevice feedbackDevice, int pidIdx = 0, int timeoutMs = 0);
-
-	/**
-	 * Sets the period of the given status frame.
-	 *
-	 * User ensure CAN Bus utilization is not high.
-	 *
-	 * This setting is not persistent and is lost when device is reset.
-	 * If this is a concern, calling application can use HasResetOccurred()
-	 * to determine if the status frame needs to be reconfigured.
-	 *
-	 * @param frame
-	 *            Frame whose period is to be changed.
-	 * @param periodMs
-	 *            Period in ms for the given frame.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode SetStatusFramePeriod(StatusFrameEnhanced frame,uint8_t periodMs, int timeoutMs = 0);
-	/**
-	 * Sets the period of the given status frame.
-	 *
-	 * User ensure CAN Bus utilization is not high.
-	 *
-	 * This setting is not persistent and is lost when device is reset.
-	 * If this is a concern, calling application can use HasResetOccurred()
-	 * to determine if the status frame needs to be reconfigured.
-	 *
-	 * @param frame
-	 *            Frame whose period is to be changed.
-	 * @param periodMs
-	 *            Period in ms for the given frame.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode SetStatusFramePeriod(StatusFrame frame,uint8_t periodMs, int timeoutMs = 0);
-
-	/**
-	 * Gets the period of the given status frame.
-	 *
-	 * @param frame
-	 *            Frame to get the period of.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Period of the given status frame.
-	 */
-	virtual int GetStatusFramePeriod(StatusFrameEnhanced frame, int timeoutMs = 0);
-	/**
-	 * Gets the period of the given status frame.
-	 *
-	 * @param frame
-	 *            Frame to get the period of.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Period of the given status frame.
-	 */
-	virtual int GetStatusFramePeriod(StatusFrame frame, int timeoutMs = 0);
-	
-	//------ General Status ----------//
-    /**
-	 * Gets the output current of the motor controller.
-	 *
-	 * @return The output current (in amps).
-	 */
-    virtual double GetOutputCurrent();
-
-	//------ Velocity measurement ----------//
-	/**
-	 * Configures the period of each velocity sample.
-	 * Every 1ms a position value is sampled, and the delta between that sample
-	 * and the position sampled kPeriod ms ago is inserted into a filter.
-	 * kPeriod is configured with this function.
-	 *
-	 * @param period
-	 *            Desired period for the velocity measurement. @see
-	 *            #VelocityMeasPeriod
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigVelocityMeasurementPeriod(VelocityMeasPeriod period,
-			int timeoutMs = 0);
-	/**
-	 * Sets the number of velocity samples used in the rolling average velocity
-	 * measurement.
-	 *
-	 * @param windowSize
-	 *            Number of samples in the rolling average of velocity
-	 *            measurement. Valid values are 1,2,4,8,16,32. If another
-	 *            value is specified, it will truncate to nearest support value.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigVelocityMeasurementWindow(int windowSize,
-			int timeoutMs = 0);
-
-	//------ limit switch ----------//
-	/**
-	 * Configures a limit switch for a local/remote source.
-	 *
-	 * For example, a CAN motor controller may need to monitor the Limit-R pin
-	 * of another Talon, CANifier, or local Gadgeteer feedback connector.
-	 *
-	 * If the sensor is remote, a device ID of zero is assumed.
-	 * If that's not desired, use the four parameter version of this function.
-	 *
-	 * @param limitSwitchSource
-	 *            Limit switch source.
-	 *            User can choose between the feedback connector, remote Talon SRX, CANifier, or deactivate the feature.
-	 * @param normalOpenOrClose
-	 *            Setting for normally open, normally closed, or disabled. This setting
-	 *            matches the Phoenix Tuner drop down.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigForwardLimitSwitchSource(
-			LimitSwitchSource limitSwitchSource,
-			LimitSwitchNormal normalOpenOrClose, int timeoutMs = 0);
-	/**
-	 * Configures a limit switch for a local/remote source.
-	 *
-	 * For example, a CAN motor controller may need to monitor the Limit-R pin
-	 * of another Talon, CANifier, or local Gadgeteer feedback connector.
-	 *
-	 * If the sensor is remote, a device ID of zero is assumed.
-	 * If that's not desired, use the four parameter version of this function.
-	 *
-	 * @param limitSwitchSource
-	 *            Limit switch source.
-	 *            User can choose between the feedback connector, remote Talon SRX, CANifier, or deactivate the feature.
-	 * @param normalOpenOrClose
-	 *            Setting for normally open, normally closed, or disabled. This setting
-	 *            matches the Phoenix Tuner drop down.
-	 * @param deviceID
-	 *            Device ID of remote source (Talon SRX or CANifier device ID).
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for
-	 *            config success and report an error if it times out.
-	 *            If zero, no blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigForwardLimitSwitchSource(
-			RemoteLimitSwitchSource limitSwitchSource,
-			LimitSwitchNormal normalOpenOrClose, int deviceID, int timeoutMs = 0);
-	/**
-	 * Configures a limit switch for a local/remote source.
-	 *
-	 * For example, a CAN motor controller may need to monitor the Limit-R pin
-	 * of another Talon, CANifier, or local Gadgeteer feedback connector.
-	 *
-	 * If the sensor is remote, a device ID of zero is assumed. If that's not
-	 * desired, use the four parameter version of this function.
-	 *
-	 * @param limitSwitchSource
-	 *            Limit switch source. @see #LimitSwitchSource User can choose
-	 *            between the feedback connector, remote Talon SRX, CANifier, or
-	 *            deactivate the feature.
-	 * @param normalOpenOrClose
-	 *            Setting for normally open, normally closed, or disabled. This
-	 *            setting matches the Phoenix Tuner drop down.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for config
-	 *            success and report an error if it times out. If zero, no
-	 *            blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigReverseLimitSwitchSource(
-			LimitSwitchSource limitSwitchSource,
-			LimitSwitchNormal normalOpenOrClose, int timeoutMs = 0);
-	/**
-	 * Configures a limit switch for a local/remote source.
-	 *
-	 * For example, a CAN motor controller may need to monitor the Limit-R pin
-	 * of another Talon, CANifier, or local Gadgeteer feedback connector.
-	 *
-	 * If the sensor is remote, a device ID of zero is assumed. If that's not
-	 * desired, use the four parameter version of this function.
-	 *
-	 * @param limitSwitchSource
-	 *            Limit switch source. @see #LimitSwitchSource User can choose
-	 *            between the feedback connector, remote Talon SRX, CANifier, or
-	 *            deactivate the feature.
-	 * @param normalOpenOrClose
-	 *            Setting for normally open, normally closed, or disabled. This
-	 *            setting matches the Phoenix Tuner drop down.
-	 * @param deviceID
-	 *            Device ID of remote source (Talon SRX or CANifier device ID).
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for config
-	 *            success and report an error if it times out. If zero, no
-	 *            blocking or checking is performed.
-	 * @return Error Code generated by function. 0 indicates no error.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigReverseLimitSwitchSource(
-			RemoteLimitSwitchSource limitSwitchSource,
-			LimitSwitchNormal normalOpenOrClose, int deviceID, int timeoutMs = 0);
-
-	//------ Current Limit ----------//
-	/**
-	 * Configure the peak allowable current (when current limit is enabled).
-	 * 
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-	 *
-	 * For simpler current-limiting (single threshold) use
-	 * ConfigContinuousCurrentLimit() and set the peak to zero:
-	 * ConfigPeakCurrentLimit(0).
-	 * 
-	 * @param amps
-	 *            Amperes to limit.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for config
-	 *            success and report an error if it times out. If zero, no
-	 *            blocking or checking is performed.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigPeakCurrentLimit(int amps, int timeoutMs = 0);
-	/**
-	 * Configure the peak allowable duration (when current limit is enabled).
-	 *
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-	 *
-	 * For simpler current-limiting (single threshold) use
-	 * ConfigContinuousCurrentLimit() and set the peak to zero:
-	 * ConfigPeakCurrentLimit(0).
-	 * 
-	 * @param milliseconds
-	 *            How long to allow current-draw past peak limit.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for config
-	 *            success and report an error if it times out. If zero, no
-	 *            blocking or checking is performed.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigPeakCurrentDuration(int milliseconds,
-			int timeoutMs = 0);
-	/**
-	 * Configure the continuous allowable current-draw (when current limit is
-	 * enabled).
-	 *
-	 * Current limit is activated when current exceeds the peak limit for longer
-	 * than the peak duration. Then software will limit to the continuous limit.
-	 * This ensures current limiting while allowing for momentary excess current
-	 * events.
-	 *
-	 * For simpler current-limiting (single threshold) use
-	 * ConfigContinuousCurrentLimit() and set the peak to zero:
-	 * ConfigPeakCurrentLimit(0).
-	 * 
-	 * @param amps
-	 *            Amperes to limit.
-	 * @param timeoutMs
-	 *            Timeout value in ms. If nonzero, function will wait for config
-	 *            success and report an error if it times out. If zero, no
-	 *            blocking or checking is performed.
-	 */
-	virtual ctre::phoenix::ErrorCode ConfigContinuousCurrentLimit(int amps, int timeoutMs = 0);
-	/**
-	 * Enable or disable Current Limit.
-	 * 
-	 * @param enable
-	 *            Enable state of current limit.
-	 * @see configPeakCurrentLimit()
-	 * @see configPeakCurrentDuration()
-	 * @see configContinuousCurrentLimit()
-	 */
-	virtual void EnableCurrentLimit(bool enable);
-	
-	//------ RAW Sensor API ----------//
-	/**
-	 * @return object that can get/set individual RAW sensor values.
-	 */
-	ctre::phoenix::motorcontrol::SensorCollection & GetSensorCollection();
-
-	//------ All Configs ----------//
-    /**
-     * Gets all PID set persistant settings.
-     *
-	 * @param pid               Object with all of the PID set persistant settings
-	 * @param pidIdx            0 for Primary closed-loop. 1 for auxiliary closed-loop.
-     * @param timeoutMs
-     *              Timeout value in ms. If nonzero, function will wait for
-     *              config success and report an error if it times out.
-     *              If zero, no blocking or checking is performed.
-     */
-	void GetPIDConfigs(TalonSRXPIDSetConfiguration &pid, int pidIdx = 0, int timeoutMs = 50);
-    /**
-     * Configures all peristant settings.
-     *
-	 * @param allConfigs        Object with all of the persistant settings
-     * @param timeoutMs
-     *              Timeout value in ms. If nonzero, function will wait for
-     *              config success and report an error if it times out.
-     *              If zero, no blocking or checking is performed.
-     *
-     * @return Error Code generated by function. 0 indicates no error. 
-     */
-	ctre::phoenix::ErrorCode ConfigAllSettings(const TalonSRXConfiguration &allConfigs, int timeoutMs = 50);
-    /**
-     * Gets all persistant settings.
-     *
-	 * @param allConfigs        Object with all of the persistant settings
-     * @param timeoutMs
-     *              Timeout value in ms. If nonzero, function will wait for
-     *              config success and report an error if it times out.
-     *              If zero, no blocking or checking is performed.
-     */
-	void GetAllConfigs(TalonSRXConfiguration &allConfigs, int timeoutMs = 50);
-};// class TalonSRX
-
-
-
-
-} // namespace can
-} // namespace motorcontrol
-} // namespace phoenix
+			} // namespace can
+		} // namespace motorcontrol
+	} // namespace phoenix
 } // namespace ctre
 
 #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)

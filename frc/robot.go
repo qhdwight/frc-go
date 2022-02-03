@@ -2,6 +2,7 @@ package frc
 
 import (
 	"go-frc/frc/phoenix"
+	"go-frc/frc/wpi"
 )
 
 const (
@@ -12,11 +13,11 @@ type Robot struct {
 	right, left *phoenix.Talon
 }
 
-func (robot Robot) getPeriod() float64 {
+func (robot Robot) GetPeriod() float64 {
 	return DefaultPeriod
 }
 
-func (robot Robot) robotInit() {
+func (robot Robot) RobotInit() {
 	robot.right = phoenix.NewTalon(6)
 	phoenix.NewSlaveTalon(5, robot.right)
 	phoenix.NewSlaveTalon(4, robot.right)
@@ -25,40 +26,40 @@ func (robot Robot) robotInit() {
 	phoenix.NewSlaveTalon(3, robot.left)
 }
 
-func (robot Robot) disabledInit() {
+func (robot Robot) DisabledInit() {
 
 }
 
-func (robot Robot) disabledPeriodic() {
+func (robot Robot) DisabledPeriodic() {
 
 }
 
-func (robot Robot) robotPeriodic() {
+func (robot Robot) RobotPeriodic() {
 
 }
 
-func (robot Robot) testInit() {
+func (robot Robot) TestInit() {
 
 }
 
-func (robot Robot) testPeriodic() {
+func (robot Robot) TestPeriodic() {
 
 }
 
-func (robot Robot) autonomousInit() {
+func (robot Robot) AutonomousInit() {
 
 }
 
-func (robot Robot) autonomousPeriodic() {
+func (robot Robot) AutonomousPeriodic() {
 }
 
-func (robot Robot) teleopInit() {
+func (robot Robot) TeleopInit() {
 
 }
 
-func (robot Robot) teleopPeriodic() {
-	throttle := getJoystickAxis(0, 1)
-	turn := getJoystickAxis(0, 0)
+func (robot Robot) TeleopPeriodic() {
+	throttle := wpi.GetJoystickAxis(0, 1)
+	turn := wpi.GetJoystickAxis(0, 0)
 	robot.left.Set(turn - throttle)
 	robot.right.Set(turn + throttle)
 }
